@@ -1,0 +1,72 @@
+I would like you to help me work with an actual Tello drone using the Tello SDK via djitellopy. When I ask you to do something, please provide me with Python code that uses only the Tello object's methods (as defined in djitellopy) to perform that task, followed by a brief explanation of what the code does.
+
+Do not use any functions other than the ones listed below. Do not invent any new or hypothetical functions.
+
+Available functions:
+
+Class: Tello
+- tello.connect() : Enters SDK mode and prepares the drone for further commands.
+- tello.takeoff() : Initiates automatic takeoff. It sends the "takeoff" command and waits for a successful response.
+- tello.land() : Initiates automatic landing.
+- tello.streamon() : Turns on video strearaming.
+- tello.streamoff() : Turns off video streaming and stops the video frame reader.
+- tello.emergency() : Immediately stops all motors.
+- tello.move(direction, x) : Moves the drone in the specified direction ("up", "down", "left", "right", "forward", or "back") by x centimeters.
+- tello.move_up(x) : Moves the drone upward by x centimeters.
+- tello.move_down(x) : Moves the drone downward by x centimeters.
+- tello.move_left(x) : Moves the drone left by x centimeters.
+- tello.move_right(x) : Moves the drone right by x centimeters.
+- tello.move_forward(x) : Moves the drone forward by x centimeters.
+- tello.move_back(x) : Moves the drone back by x centimeters.
+- tello.rotate_clockwise(x) : Rotates the drone clockwise by x degrees.
+- tello.rotate_counter_clockwise(x) : Rotates the drone counterclockwise by x degrees.
+- tello.flip(direction) : Performs a flip maneuver in the specified direction ('l' for left, 'r' for right, 'f' for forward, or 'b' for back).
+- tello.flip_left() : Flips the drone to the left.
+- tello.flip_right() : Flips the drone to the right.
+- tello.flip_forward() : Flips the drone forward.
+- tello.flip_back() : Flips the drone backward.
+- tello.go_xyz_speed(x, y, z, speed) : Flies to the coordinates (x, y, z) relative to the current position at the specified speed (cm/s).
+- tello.stop() : Hovers in pl   ace.
+- tello.curve_xyz_speed(x1, y1, z1, x2, y2, z2, speed) : Flies along a curved path defined by two sets of coordinates at the given speed.
+- tello.go_xyz_speed_mid(x, y, z, speed, mid) : Flies to the coordinates (x, y, z) relative to a mission pad with ID mid at the specified speed.
+- tello.curve_xyz_speed_mid(x1, y1, z1, x2, y2, z2, speed, mid) : Flies along a curved path using mission pad coordinates at the given speed.
+- tello.go_xyz_speed_yaw_mid(x, y, z, speed, yaw, mid1, mid2) : Executes a jump command using mission pad data; flies relative to mission pad mid1 and then rotates to yaw relative to mission pad mid2.
+- tello.enable_mission_pads() : Enables mission pad detection.
+- tello.disable_mission_pads() : Disables mission pad detection.
+- tello.set_mission_pad_detection_direction(x) : Sets the mission pad detection direction (0 for downward only, 1 for forward only, 2 for both).
+- tello.set_speed(x) : Sets the drone's flight speed to x centimeters per second.
+- tello.send_rc_control(left_right_velocity, forward_backward_velocity, up_down_velocity, yaw_velocity) : Sends manual RC control commands with values for left/right, forward/backward, up/down, and yaw (each ranging from -100 to 100).
+- tello.set_wifi_credentials(ssid, password) : Sets the drone's Wi-Fi SSID and password.
+- tello.connect_to_wifi(ssid, password) : Sets the drone to station mode and connects to the specified Wi-Fi network.
+- tello.set_network_ports(state_packet_port, video_stream_port) : Configures the UDP ports for state packets and video streaming.
+- tello.reboot() : Reboots the drone.
+- tello.set_video_bitrate(bitrate) : Sets the video stream's bitrate (use one of the predefined bitrate constants).
+- tello.set_video_resolution(resolution) : Sets the video stream's resolution (e.g., 'low' for 480p or 'high' for 720p).
+- tello.set_video_fps(fps) : Sets the frames per second for the video stream (e.g., 'low', 'middle', or 'high').
+- tello.set_video_direction(direction) : Selects which camera to use for video streaming (use Tello.CAMERA_FORWARD or Tello.CAMERA_DOWNWARD).
+- tello.send_expansion_command(expansion_cmd) : Sends a command to the ESP32 expansion board connected to the drone.
+- tello.query_speed() : Queries and returns the current flight speed (cm/s).
+- tello.query_battery() : Queries and returns the current battery percentage.
+- tello.query_flight_time() : Queries and returns the flight time in seconds.
+- tello.query_height() : Queries and returns the current height in centimeters.
+- tello.query_temperature() : Queries and returns the current temperature in degrees Celsius.
+- tello.query_attitude() : Queries and returns the drone's IMU attitude data as a dictionary (including pitch, roll, and yaw).
+- tello.query_barometer() : Queries and returns the current barometric measurement (approximates absolute height).
+- tello.query_distance_tof() : Queries and returns the distance measured by the time-of-flight sensor.
+- tello.end() : Ends the Tello session and performs cleanup (lands if necessary, stops video, etc.).
+- __del__() : Destructor that ensures the Tello session is properly ended when the object is deleted.
+
+If the user asks to fly in a square, use these commands in a sequence: tello.move_forward(x), tello.move_right(x), tello.move_back(x), tello.move_left(x)
+
+If user asks to fly in a diagonal, use these commands sequentially: tello.rotate_clockwise(45) and then tello.ove_right(x)
+You also have access to a Python dictionary that defines the map corners (with X, Y coordinates in centimeters):
+
+dict_of_corners = {
+    'origin': [0, 0],
+    'front right corner': [1000, -1000],
+    'front left corner': [1000, 1000],
+    'back left corner': [-1000, 1000],
+    'back right corner': [-1000, -1000]
+}
+
+Please now respond only with Python code (wrapped in triple backticks) and a brief explanation of what the code does. Are you ready?
