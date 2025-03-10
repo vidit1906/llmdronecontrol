@@ -1,203 +1,349 @@
-import cv2
-import argparse
-import os
-import re
-import threading
 import time
-import matplotlib.pyplot as plt  # Added for plotting
-from ollama import chat, ChatResponse
+import csv
 from djitellopy import Tello
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--prompt", type=str, default="tello.txt")
-args = parser.parse_args()
+# Open a CSV file to log all sensor data after each command.
+csv_file = open("drone_data_log.csv", "w", newline="")
+csv_writer = csv.writer(csv_file)
+# CSV header: timestamp, command, speed, battery, flight_time, height, temperature, attitude, barometer, tof_distance
+csv_writer.writerow(["timestamp", "command", "speed", "battery", "flight_time", "height", "temperature", "attitude", "barometer", "tof_distance"])
 
-print("Initializing the drone chat...")
-
-# Initialize conversation history with a system prompt.
-chat_history = [
-    {
-        "role": "system",
-        "content": (
-            "You are an assistant helping me control an actual Tello drone using its Python SDK (djitellopy). "
-            "When I ask you to do something, provide Python code that uses only the Tello methods (like takeoff, land, move_left, rotate_clockwise, etc.) and then an explanation of what that code does. Do not make up your own commands; only use the ones I give. Also note that there is no command as move_backward(x); it is move_back."
-        ),
-    }
-]
-
-def ask(prompt: str) -> str:
-    """
-    Sends the conversation (including the prompt) to Ollama and returns the assistant's response.
-    """
-    chat_history.append({
-        "role": "user",
-        "content": prompt,
-    })
-    response: ChatResponse = chat(model='llama3.2', messages=chat_history)
-    assistant_message = response['message']['content']
-    chat_history.append({
-        "role": "assistant",
-        "content": assistant_message,
-    })
-    return assistant_message
-
-# ------------------------------------------------------------------------------
-# Utility to extract Python code from triple-backtick blocks.
-# ------------------------------------------------------------------------------
-code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
-def extract_python_code(content: str) -> str:
-    """
-    Extracts Python code wrapped in triple backticks from the given content.
-    Removes the "python" specifier if present.
-    """
-    code_blocks = code_block_regex.findall(content)
-    if code_blocks:
-        full_code = "\n".join(code_blocks)
-        if full_code.strip().startswith("python"):
-            full_code = full_code.strip()[len("python"):].lstrip()
-        return full_code
-    return None
-
-# ------------------------------------------------------------------------------
-# Terminal Colors for nicer output.
-# ------------------------------------------------------------------------------
-class colors:
-    RED = "\033[31m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    BLUE = "\033[34m"
-    ENDC = "\033[0m"
-
-# ------------------------------------------------------------------------------
-# Connect to Tello drone and start video streaming
-# ------------------------------------------------------------------------------
-print("Connecting to Tello drone...")
+# Initialize the Tello drone and connect.
 tello = Tello()
 tello.connect()
-print("Battery:", tello.get_battery())
+time.sleep(1)
 
-# Start video streaming immediately
-tello.streamon()
+# Instead of using the built-in query_* methods (which try to convert values to int),
+# we override them to simply call send_read_command and return the raw string.
+tello.query_speed = lambda: tello.send_read_command("speed?")
+tello.query_flight_time = lambda: tello.send_read_command("time?")
+tello.query_height = lambda: tello.send_read_command("height?")
+tello.query_temperature = lambda: tello.send_read_command("temp?")
+tello.query_battery = lambda: tello.send_read_command("battery?")
+tello.query_barometer = lambda: tello.send_read_command("baro?")
+tello.query_distance_tof = lambda: tello.send_read_command("tof?")
+# Leave query_attitude unchanged (it returns a dictionary) 
+# or alternatively, you could override it to return a raw string:
+# tello.query_attitude = lambda: tello.send_read_command("attitude?")
 
-# ------------------------------------------------------------------------------
-# Altitude logging functionality
-# ------------------------------------------------------------------------------
-# Global flag to control the logging thread.
-logging_active = True
+# Command 1: takeoff
+tello.takeoff()
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "takeoff",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-def log_altitude():
-    """
-    Wait until the drone starts flying (flight_time > 0), then log the current timestamp,
-    altitude (using tello.query_height()) and flight time (using tello.query_flight_time())
-    to a text file named 'altitude_log.txt'. Logs are written every second.
-    """
-    # Wait until flight starts.
-    while logging_active and tello.query_flight_time() == 0:
-        time.sleep(0.5)
-    with open("altitude_log.txt", "w") as alt_file:
-        alt_file.write("timestamp,altitude,flight_time\n")
-        while logging_active:
-            try:
-                altitude = tello.query_height()
-                flight_time = tello.query_flight_time()
-                current_time = time.time()
-                alt_file.write(f"{current_time},{altitude},{flight_time}\n")
-                alt_file.flush()
-                time.sleep(1)
-            except Exception as e:
-                print("Error logging altitude:", e)
-                time.sleep(1)
+# Command 2: move_up(50)
+tello.move_up(50)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_up(50)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# Start the altitude logging thread.
-altitude_thread = threading.Thread(target=log_altitude)
-altitude_thread.start()
+# Command 3: move_forward(100)
+tello.move_forward(100)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_forward(100)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# ------------------------------------------------------------------------------
-# Define the interactive chatbot loop (to be run in a separate thread)
-# ------------------------------------------------------------------------------
-def chatbot_loop():
-    with open(args.prompt, "r") as f:
-        prompt_text = f.read()
-    ask(prompt_text)
-    print("Welcome to the Tello Drone chatbot using djitellopy!")
-    print("Type !quit or !exit to end the session, or !clear to clear the screen.\n")
-    while True:
-        question = input(colors.YELLOW + "Tello Chatbot> " + colors.ENDC)
-        if question in ("!quit", "!exit"):
-            break
-        if question == "!clear":
-            os.system("cls" if os.name == "nt" else "clear")
-            continue
+# Command 4: move_left(50)
+tello.move_left(50)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_left(50)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-        response = ask(question)
-        print("\n" + response + "\n")
+# Command 5: move_right(50)
+tello.move_right(50)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_right(50)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-        # Extract and execute any Python code provided in the assistant's response.
-        code = extract_python_code(response)
-        if code is not None:
-            print("Executing the following code:")
-            print(code)
-            try:
-                exec(code)
-            except Exception as e:
-                print("Error executing code:", e)
-            print("Execution complete!\n")
-            print("Battery:", tello.get_battery())
-    print("Chatbot loop exiting...")
+# Command 6: move_down(50)
+tello.move_down(50)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_down(50)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# ------------------------------------------------------------------------------
-# Define the livestream function (to run in the main thread)
-# ------------------------------------------------------------------------------
-def livestream():
-    while True:
-        frame = tello.get_frame_read().frame
-        cv2.imshow('Tello Video', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    tello.streamoff()
-    cv2.destroyAllWindows()
+# Command 7: rotate_clockwise(90)
+tello.rotate_clockwise(90)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "rotate_clockwise(90)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# ------------------------------------------------------------------------------
-# Start the chatbot loop in a separate thread
-# ------------------------------------------------------------------------------
-chat_thread = threading.Thread(target=chatbot_loop, daemon=True)
-chat_thread.start()
+# Command 8: move_back(100)
+tello.move_back(100)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_back(100)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# Run the livestream in the main thread
-livestream()
+# Command 9: flip_forward()
+tello.flip_forward()
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "flip_forward()",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# Wait for the chatbot loop to exit (if it hasn't already)
-chat_thread.join()
+# Command 10: flip_left()
+tello.flip_left()
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "flip_left()",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# ------------------------------------------------------------------------------
-# Stop altitude logging, land the drone, and then plot altitude data.
-# ------------------------------------------------------------------------------
-print("Landing drone and exiting...")
+# Command 11: flip_right()
+tello.flip_right()
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "flip_right()",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 12: flip_back()
+tello.flip_back()
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "flip_back()",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 13: move_up(30)
+tello.move_up(30)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_up(30)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 14: move_forward(30)
+tello.move_forward(30)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_forward(30)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 15: move_down(30)
+tello.move_down(30)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_down(30)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 16: rotate_counter_clockwise(45)
+tello.rotate_counter_clockwise(45)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "rotate_counter_clockwise(45)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 17: move_right(40)
+tello.move_right(40)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_right(40)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 18: move_left(40)
+tello.move_left(40)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_left(40)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 19: move_back(30)
+tello.move_back(30)
+time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "move_back(30)",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
+
+# Command 20: land
 tello.land()
 time.sleep(2)
+csv_writer.writerow([
+    time.time(),
+    "land",
+    tello.query_speed(),
+    tello.query_battery(),
+    tello.query_flight_time(),
+    tello.query_height(),
+    tello.query_temperature(),
+    str(tello.query_attitude()),
+    tello.query_barometer(),
+    tello.query_distance_tof()
+])
 
-# Signal the altitude logging thread to stop and wait for it to finish.
-logging_active = False
-altitude_thread.join()
-
-# Read logged altitude data from the file.
-timestamps = []
-altitudes = []
-flight_times = []
-with open("altitude_log.txt", "r") as alt_file:
-    next(alt_file)  # Skip the header.
-    for line in alt_file:
-        parts = line.strip().split(",")
-        if len(parts) >= 3:
-            ts, alt, ft = parts
-            timestamps.append(float(ts))
-            altitudes.append(float(alt))
-            flight_times.append(float(ft))
-
-# Plot altitude vs flight time.
-plt.figure()
-plt.plot(flight_times, altitudes)
-plt.xlabel("Flight Time (s)")
-plt.ylabel("Altitude (cm)")
-plt.title("Drone Altitude vs Flight Time")
-plt.show()
+csv_file.close()

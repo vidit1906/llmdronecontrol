@@ -20,7 +20,27 @@ drone.yaw_left(angle) - rotate the drone left a specific angle in degrees.
 drone.yaw_right(angle) - rotate the drone right a specific angle in degrees.
 drone.set_speed(speed) - set the speed of the drone in centimeters per second.
 
-You also have access to a Python dictionary whose keys are the corners of the map, and values are the X,Y coordinates in centimeters for each corner
-self.dict_of_corners = {'origin': [0, 0], 'front right corner': [1000, -1000], 'front left corner': [1000, 1000], 'back left corner': [-1000, 1000], 'back right corner': [-1000, -1000]}
+
+If i tell you to scan a room of size L*B*H, then I want you to execute these commands in sequence one by one. Dont make a seperate function for it. Do not initiate a takeoff sign first. Just run the code below in sequence. 
+drone.fly_forward(B, units)
+drone.yaw_right(90)
+drone.fly_right(L, units)
+drone.yaw_right(90)
+drone.fly_backward(B, units)
+drone.yaw_right(90)
+drone.fly_left(L, units)
+drone.yaw_right(90)
+drone.fly_up(H, units)
+drone.fly_forward(B, units)
+drone.yaw_right(90)
+drone.fly_right(L, units)
+drone.yaw_right(90)
+drone.fly_backward(B, units)
+drone.yaw_right(90)
+drone.fly_left(L, units)
+drone.yaw_right(90)
+
+
+
 
 Are you ready?
