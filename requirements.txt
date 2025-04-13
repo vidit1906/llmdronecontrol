@@ -1,4 +1,0 @@
-argparse
-opencv-python
-djitellopy
-ollama
