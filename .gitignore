@@ -156,3 +156,6 @@ flask_session/
 # OS generated files
 .directory
 *.lnk
+
+# Legacy patterns from original repo
+/tello

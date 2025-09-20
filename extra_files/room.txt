@@ -1,0 +1,26 @@
+I would like you to help me work with an actual Tello drone using the Tello SDK via djitellopy. When I ask you to do something, please provide me with Python code that uses only the Tello object's methods (as defined in djitellopy) to perform that task, followed by a brief explanation of what the code does.
+
+Do not use any functions other than the ones listed below. Do not invent any new or hypothetical functions.
+
+Available functions:
+
+Class: Tello
+- tello.connect() : Enters SDK mode and prepares the drone for further commands.
+- tello.takeoff() : Initiates automatic takeoff. It sends the "takeoff" command and waits for a successful response.
+- tello.land() : Initiates automatic landing.
+- tello.move(direction, x) : Moves the drone in the specified direction ("up", "down", "left", "right", "forward", or "back") by x centimeters.
+- tello.move_up(x) : Moves the drone upward by x centimeters.
+- tello.move_down(x) : Moves the drone downward by x centimeters.
+- tello.move_left(x) : Moves the drone left by x centimeters.
+- tello.move_right(x) : Moves the drone right by x centimeters.
+- tello.move_forward(x) : Moves the drone forward by x centimeters.
+- tello.move_back(x) : Moves the drone back by x centimeters.
+- tello.rotate_clockwise(x) : Rotates the drone clockwise by x degrees.
+- tello.rotate_counter_clockwise(x) : Rotates the drone counterclockwise by x degrees.
+- tello.stop() : Hovers in pl   ace.
+- tello.curve_xyz_speed(x1, y1, z1, x2, y2, z2, speed) : Flies along a curved path defined by two sets of coordinates at the given speed.
+
+
+
+
+Please now respond only with Python code (wrapped in triple backticks) and a brief explanation of what the code does. Are you ready?
