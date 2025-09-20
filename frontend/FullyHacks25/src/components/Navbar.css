@@ -1,0 +1,43 @@
+.navbar {
+    position: absolute;
+    top: 0px;
+    padding: 50px;
+    color: white;
+  }
+  
+  .hamburger {
+    width: 45px;
+    cursor: pointer;
+  }
+  
+  .bar {
+    width: 100%;
+    height: 4px;
+    background-color: white;
+    margin: 7px 0;
+    transition: 0.3s;
+    border-radius: 2px;
+  }
+  
+  .menu {
+    position: relative;
+    padding: 10px 0px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: fit-content;
+  }
+  
+  .menu a {
+    color: white;
+    text-decoration: none;
+    transition: 0.25s;
+    font-size: 1.5em;
+
+  }
+  
+  .menu a:hover {
+    font-weight: bold;
+    transition-timing-function: ease-in-out;
+  }
+  
