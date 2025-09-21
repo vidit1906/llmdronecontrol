@@ -98,9 +98,11 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Large model files (optional - comment out if you want to include them)
+# Large model files - exclude from git
 *.weights
 *.caffemodel
+MobileNetSSD_deploy.caffemodel
+yolov3.weights
 
 # Database files
 *.sqlite3
@@ -108,6 +110,11 @@ Desktop.ini
 
 # Vector database files
 drone_commands_db/
+**/drone_commands_db/
+data_level0.bin
+header.bin
+length.bin
+link_lists.bin
 
 # Compressed files
 *.zip
@@ -121,10 +128,16 @@ drone_commands_db/
 *.swo
 *~
 
-# Output files
+# Output files and media
 output/
 *.gif
 *.mp4
+real_time.gif
+earth.mp4
+
+# Cache files
+**/.cache/
+*.pack
 
 # ChromaDB
 chroma.sqlite3
